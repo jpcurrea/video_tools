@@ -28,7 +28,12 @@ def smooth(arr, sigma=5):
 
 def center_of_mass(arr):
     blur = smooth(arr, 20)
-    center = skimage.feature.peak_local_max(blur, num_peaks=1)[0]
+    center = skimage.feature.peak_local_max(blur, num_peaks=1)
+    if len(center) > 0:
+        center = center[0]
+    else:
+        center = np.empty(2, dtype=float)
+        center.fill(np.nan)
     return center
 
 class Video1(Stack):

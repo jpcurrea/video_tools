@@ -62,7 +62,7 @@ class Video1(Stack):
                      "-ar", "44100",
                      "-ab", "128",
                      "-vn", self.audio_fname])
-                self.audio = Recording(self.audio_fname)
+                self.audio = Recording(self.audio_fname, trim=False)
             except subprocess.CalledProcessError:
                 print("failed to get audio from video!")
 

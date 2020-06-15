@@ -2,6 +2,7 @@ import os
 import numpy as np
 import subprocess
 from scipy import ndimage
+import skimage
 from skvideo import io
 from skvideo.io import ffprobe
 from fly_eye import *
@@ -17,6 +18,18 @@ def print_progress(part, whole):
     sys.stdout.write("[%-20s] %d%%" % ("="*int(20*prop), 100*prop))
     sys.stdout.flush()
 
+def smooth(arr, sigma=5):
+    """A 2d smoothing filter for the heights array"""
+    # arr = arr.astype("float32")
+    fft2 = np.fft.fft2(arr)
+    ndimage.fourier_gaussian(fft2, sigma=sigma, output=fft2)
+    positive = np.fft.ifft2(fft2).real
+    return positive
+
+def center_of_mass(arr):
+    blur = smooth(arr, 20)
+    center = skimage.feature.peak_local_max(blur, num_peaks=1)[0]
+    return center
 
 class Video1(Stack):
     """Takes a stack of images, or a video that is converted to a stack of images,
@@ -57,12 +70,17 @@ class Video1(Stack):
                 stack!".format(self.f_type))
             try:
                 self.audio_fname = "{}.wav".format(self.filename[:-4])
-                failed = subprocess.check_output(
-                    ["ffmpeg", "-i", self.filename, "-f", "wav",
-                     "-ar", "44100",
-                     "-ab", "128",
-                     "-vn", self.audio_fname])
-                self.audio = Recording(self.audio_fname, trim=False)
+                if os.path.exists(self.audio_fname):
+                    resp = None
+                    while resp not in ['0', '1']:
+                        resp = input("Audio file found. Press <1> to load this file or <0> to extract the files again.")
+                    if resp == '0':
+                        failed = subprocess.check_output(
+                            ["ffmpeg", "-i", self.filename, "-f", "wav",
+                             "-ar", "44100",
+                             "-ab", "128",
+                             "-vn", self.audio_fname, '-y'])
+                    self.audio = Recording(self.audio_fname, trim=False)
             except subprocess.CalledProcessError:
                 print("failed to get audio from video!")
 
@@ -73,7 +91,7 @@ class Video1(Stack):
 
     def select_color_range(self, samples=5):
         color_range = []
-        intervals = len(self.layers)/samples
+        intervals = int(round(len(self.layers)/samples))
         for l in self.layers[::intervals]:
             l.select_color()
             color_range += [l.cs.colors]

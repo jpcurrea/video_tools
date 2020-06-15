@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name="video_tools",
-      version='0.2',
+      version='0.2.1',
       description='tools for anayzing video mostly using skvideo.',
       url="https://github.com/jpcurrea/video_tools.git",
       author='Pablo Currea',
